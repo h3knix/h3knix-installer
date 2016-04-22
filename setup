@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd /mnt/cdrom
+echo "Starting installer..."
+./install.py $*

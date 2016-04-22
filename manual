@@ -1,0 +1,75 @@
+#!/bin/bash
+
+start="/mnt/cdrom"
+
+if [ "$root" = "" ] ; then
+	echo "Error"
+	echo "h3knix root not defined, use \"export root=folder\""
+	echo ""
+	exit 1
+fi
+
+export inpath=$root
+
+if [ "$1" = "" ] ; then
+	echo ""
+	echo "manual help"
+	
+	echo "
+	This tool does not resolve dependencies
+	Install the appropriate capsules in correct order
+	\"core\" is required
+	\"base\" depends on core
+	\"ext\" depends on base
+	\"media\" depends on all
+	
+	manual <group>
+		Installs the specified capsule group
+		
+	manual <capsule>
+		Installs an extraneous capsule to root
+		
+	root is defined by exporting root variable to env
+	example: \"export root=/mnt/h3knix\"
+	
+	"
+	echo ""
+	exit 0
+fi
+
+if [ -e "$start/lists/$1.list" ] ; then
+	echo ""
+	echo " Installing $1"
+	if [ ! -d $root/caps ] ; then
+		mkdir -p $root/caps
+	fi
+	for i in `cat $start/lists/$1.list` ; do
+		echo "Extracting $i"
+		tar xjf $start/$i.cap -C $root/caps/
+		cd $root/caps/`basename $i`
+		sh main.sh
+		cd $start
+		echo ""
+	done
+	rm -rf $root/caps
+	echo "$1 installed"
+	echo ""
+else
+	if [ -e "$1" ] ; then
+		echo "Installing $1"
+		if [ ! -d $root/caps ] ; then
+			mkdir -p $root/caps
+		fi
+		echo "Extracting $1"
+		tar xjf $1 -C $root/caps/
+		fname=`echo $1 | sed s/.cap//`
+		cd $root/caps/`basename $fname`
+		sh main.sh
+		cd $start
+		echo ""
+		rm -rf $root/caps
+		echo "$1 installed"
+		exit 0
+	fi
+	echo " List $1 not found"
+fi

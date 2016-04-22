@@ -1,0 +1,79 @@
+#!/bin/bash
+
+start="/mnt/cdrom"
+menuloc="/tmp"
+repcommand="$start/replimenu"
+
+if [ "$root" = "" ] ; then
+	echo "Error"
+	echo "h3knix root not defined, use \"export root=folder\""
+	echo ""
+	exit 1
+fi
+
+export inpath=$root
+
+
+if [ "$1" = "" ] ; then
+	echo ""
+	echo "menu help"
+	
+	echo "
+	This tool does not resolve dependencies
+	\"core\" is required
+	\"base\" depends on core
+	\"ext\" depends on base
+	\"media\" depends on all
+	
+	menu <group>
+		Installs the specified capsule group
+		
+	After selecting the packages, at the bottom, is a button labeled
+	\"Install components\"
+	This will install the selections you have chosen, it will begin
+	instantly when you click it, so have the partition ready and
+	mounted to \"root\"
+	
+	If you wish to cancel, hit q to exit the menu, this will
+	halt the current installation, and you will lose any progress
+	you have made with checking packages
+	"
+fi
+
+# first argument must be a list of capsule to install
+# second argument is the directory where the capsules are
+function doinstall {
+	echo ""
+	echo "Installing capsules"
+	if [ ! -d $root/caps ] ; then
+		mkdir -p $root/caps
+	fi
+	for i in `cat $1` ; do
+		echo "Extracting $i"
+		tar xjf $2/$i.cap -C $root/caps/
+		cd $root/caps/`basename $i`
+		sh main.sh
+		cd $start
+		echo ""
+	done
+	rm -rf $root/caps
+	echo "capsules installed"
+	echo ""
+}
+
+if [ -e "$start/menus/$1.menu" ] ; then
+	echo "Starting menu system for $1"
+	$repcommand -f $start/menus/$1.menu
+	if [ -e $menuloc/$1.in ] ; then
+		sed 1d -i $menuloc/$1.in
+		doinstall $menuloc/$1.in $start/$1
+	else
+		echo " - Installtion skipped"
+	fi
+	rm -rf $menuloc/$1.in
+	echo " Finished $1"
+else
+	echo "Cannot find menu $1"
+	exit 1
+fi
+

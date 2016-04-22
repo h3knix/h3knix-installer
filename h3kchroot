@@ -1,0 +1,42 @@
+#!/bin/bash
+
+if [ "$root" = "" ] ; then
+	root="/mnt/h3knix"
+	export root="/mnt/h3knix"
+fi
+
+if [ ! -d "$root/dev" ] ; then
+	echo "$root/dev not found"
+	echo "Must install h3knix before you can chroot"
+	exit 1
+fi
+
+if [ ! -d "$root/proc" ] ; then
+	echo "$root/proc not found"
+	echo "Must install h3knix before you can chroot"
+	exit 1
+fi
+
+if [ ! -d "$root/sys" ] ; then
+	echo "$root/sys not found"
+	echo "Must install h3knix before you can chroot"
+	exit 1
+fi
+
+echo "Binding system folders"
+mount --bind /dev $root/dev
+mount --bind /sys $root/sys
+mount --bind /proc $root/proc
+
+echo "Chrooting to $root"
+chroot "$root" /usr/bin/env -i \
+    HOME=/root TERM="$TERM" PS1='\u:\w\$ ' \
+    PATH=/bin:/usr/bin:/sbin:/usr/sbin \
+    /bin/bash --login
+    
+echo "Unbinding system folders"
+umount $root/dev
+umount $root/sys
+umount $root/proc
+
+echo "Finished"
